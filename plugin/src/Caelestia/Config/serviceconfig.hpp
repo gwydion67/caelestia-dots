@@ -34,6 +34,28 @@ class ServiceConfig : public ConfigObject {
         { vmap({ { u"from"_s, u"com.github.th_ch.youtube_music"_s }, { u"to"_s, u"YT Music"_s } }) })
     CONFIG_GLOBAL_PROPERTY(QString, lyricsBackend, u"Auto"_s)
 
+    // Hot corners
+    CONFIG_PROPERTY(bool, enabledTopLeft, true)
+    CONFIG_PROPERTY(bool, enabledTopRight, true)
+    CONFIG_PROPERTY(bool, enabledBottomLeft, true)
+    CONFIG_PROPERTY(bool, enabledBottomRight, true)
+    CONFIG_PROPERTY(QString, actionTopLeft, u"launcher"_s)
+    CONFIG_PROPERTY(QString, actionTopRight, u"dashboard"_s)
+    CONFIG_PROPERTY(QString, actionBottomLeft, u"session"_s)
+    CONFIG_PROPERTY(QString, actionBottomRight, u"sidebar"_s)
+    CONFIG_PROPERTY(QString, customCmdTopLeft, u""_s)
+    CONFIG_PROPERTY(QString, customCmdTopRight, u""_s)
+    CONFIG_PROPERTY(QString, customCmdBottomLeft, u""_s)
+    CONFIG_PROPERTY(QString, customCmdBottomRight, u""_s)
+    CONFIG_PROPERTY(int, delayTopLeft, 300)
+    CONFIG_PROPERTY(int, delayTopRight, 300)
+    CONFIG_PROPERTY(int, delayBottomLeft, 300)
+    CONFIG_PROPERTY(int, delayBottomRight, 300)
+    CONFIG_PROPERTY(int, glowRadius, 80)
+    CONFIG_PROPERTY(qreal, glowIntensity, 0.6)
+    CONFIG_PROPERTY(bool, showGlow, true)
+    CONFIG_PROPERTY(int, triggerSize, 10)
+
 public:
     explicit ServiceConfig(QObject* parent = nullptr)
         : ConfigObject(parent) {}

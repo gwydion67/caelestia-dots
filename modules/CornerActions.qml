@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -16,8 +17,15 @@ Scope {
     property int cursorX: 0
     property int cursorY: 0
 
+    Timer {
+        interval: 30
+        repeat: true
+        running: GlobalConfig.services.enabledTopLeft || GlobalConfig.services.enabledTopRight || GlobalConfig.services.enabledBottomLeft || GlobalConfig.services.enabledBottomRight
+        onTriggered: cursorProcess.running = true
+    }
+
     Process {
-        running: CornerSettings.enabled
+        id: cursorProcess
         command: ["hyprctl", "cursorpos", "-j"]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -40,6 +48,7 @@ Scope {
 
             screen: modelData
             name: "corners"
+            mask: Region {}
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -49,14 +58,16 @@ Scope {
             anchors.left: true
             anchors.right: true
 
-            visible: CornerSettings.enabled && CornerSettings.showGlow
+            visible: (GlobalConfig.services.enabledTopLeft || GlobalConfig.services.enabledTopRight || GlobalConfig.services.enabledBottomLeft || GlobalConfig.services.enabledBottomRight) && GlobalConfig.services.showGlow
 
             Item {
                 anchors.fill: parent
 
                 CornerGlow {
-                    x: 0
-                    y: 0
+                    x: -glowRadius
+                    y: -glowRadius
+                    width: glowRadius * 2
+                    height: glowRadius * 2
                     anchor: Qt.TopLeftCorner
                     cursorX: root.cursorX
                     cursorY: root.cursorY
@@ -64,15 +75,18 @@ Scope {
                     screenY: win.modelData.y
                     screenW: win.modelData.width
                     screenH: win.modelData.height
-                    enabled: CornerSettings.enabledTopLeft
-                    action: CornerSettings.actionTopLeft
-                    delay: CornerSettings.delayTopLeft
-                    triggerSize: CornerSettings.triggerSize
+                    enabled: Config.services.enabledTopLeft
+                    action: Config.services.actionTopLeft
+                    customCmd: Config.services.customCmdTopLeft
+                    delay: Config.services.delayTopLeft
+                    triggerSize: Config.services.triggerSize
                 }
 
                 CornerGlow {
-                    x: parent.width - CornerSettings.glowRadius
-                    y: 0
+                    x: parent.width - glowRadius
+                    y: -glowRadius
+                    width: glowRadius * 2
+                    height: glowRadius * 2
                     anchor: Qt.TopRightCorner
                     cursorX: root.cursorX
                     cursorY: root.cursorY
@@ -80,15 +94,18 @@ Scope {
                     screenY: win.modelData.y
                     screenW: win.modelData.width
                     screenH: win.modelData.height
-                    enabled: CornerSettings.enabledTopRight
-                    action: CornerSettings.actionTopRight
-                    delay: CornerSettings.delayTopRight
-                    triggerSize: CornerSettings.triggerSize
+                    enabled: Config.services.enabledTopRight
+                    action: Config.services.actionTopRight
+                    customCmd: Config.services.customCmdTopRight
+                    delay: Config.services.delayTopRight
+                    triggerSize: Config.services.triggerSize
                 }
 
                 CornerGlow {
-                    x: 0
-                    y: parent.height - CornerSettings.glowRadius
+                    x: -glowRadius
+                    y: parent.height - glowRadius
+                    width: glowRadius * 2
+                    height: glowRadius * 2
                     anchor: Qt.BottomLeftCorner
                     cursorX: root.cursorX
                     cursorY: root.cursorY
@@ -96,15 +113,18 @@ Scope {
                     screenY: win.modelData.y
                     screenW: win.modelData.width
                     screenH: win.modelData.height
-                    enabled: CornerSettings.enabledBottomLeft
-                    action: CornerSettings.actionBottomLeft
-                    delay: CornerSettings.delayBottomLeft
-                    triggerSize: CornerSettings.triggerSize
+                    enabled: Config.services.enabledBottomLeft
+                    action: Config.services.actionBottomLeft
+                    customCmd: Config.services.customCmdBottomLeft
+                    delay: Config.services.delayBottomLeft
+                    triggerSize: Config.services.triggerSize
                 }
 
                 CornerGlow {
-                    x: parent.width - CornerSettings.glowRadius
-                    y: parent.height - CornerSettings.glowRadius
+                    x: parent.width - glowRadius
+                    y: parent.height - glowRadius
+                    width: glowRadius * 2
+                    height: glowRadius * 2
                     anchor: Qt.BottomRightCorner
                     cursorX: root.cursorX
                     cursorY: root.cursorY
@@ -112,10 +132,11 @@ Scope {
                     screenY: win.modelData.y
                     screenW: win.modelData.width
                     screenH: win.modelData.height
-                    enabled: CornerSettings.enabledBottomRight
-                    action: CornerSettings.actionBottomRight
-                    delay: CornerSettings.delayBottomRight
-                    triggerSize: CornerSettings.triggerSize
+                    enabled: Config.services.enabledBottomRight
+                    action: Config.services.actionBottomRight
+                    customCmd: Config.services.customCmdBottomRight
+                    delay: Config.services.delayBottomRight
+                    triggerSize: Config.services.triggerSize
                 }
             }
 
@@ -127,7 +148,7 @@ Scope {
         }
     }
 
-    component CornerGlow: Item {
+    component CornerGlow: Shape {
         id: glow
 
         property int anchor
@@ -139,9 +160,12 @@ Scope {
         property int screenH
         property bool enabled
         property string action
+        property string customCmd
         property int delay
         property int triggerSize
-        property int glowRadius: CornerSettings.glowRadius
+        property int glowRadius: Config.services.glowRadius
+
+        preferredRendererType: Shape.CurveRenderer
 
         readonly property real cornerCenterX: {
             if (anchor === Qt.TopLeftCorner || anchor === Qt.BottomLeftCorner)
@@ -162,7 +186,52 @@ Scope {
         property bool triggered
         property bool wasInZone
 
+        opacity: glow.proximity * Config.services.glowIntensity
+
+        Behavior on opacity {
+            Anim {
+                type: Anim.DefaultEffects
+            }
+        }
+
+        ShapePath {
+            strokeWidth: 0
+            strokeColor: "transparent"
+            fillColor: Colours.palette.m3primary
+            fillGradient: RadialGradient {
+                centerX: glow.width / 2
+                centerY: glow.height / 2
+                centerRadius: glow.glowRadius
+                focalX: centerX
+                focalY: centerY
+
+                GradientStop { position: 0; color: Qt.alpha(Colours.palette.m3primary, 1) }
+                GradientStop { position: 0.7; color: Qt.alpha(Colours.palette.m3primary, 0.6) }
+                GradientStop { position: 1; color: Qt.alpha(Colours.palette.m3primary, 0) }
+            }
+
+            startX: glow.glowRadius
+            startY: 0
+            PathArc {
+                x: glow.glowRadius
+                y: glow.height
+                radiusX: glow.glowRadius
+                radiusY: glow.glowRadius
+            }
+            PathArc {
+                x: glow.glowRadius
+                y: 0
+                radiusX: glow.glowRadius
+                radiusY: glow.glowRadius
+            }
+        }
+
         function doAction(): void {
+            if (action === "custom" && customCmd) {
+                Quickshell.execDetached(customCmd.trim().split(" "));
+                return;
+            }
+
             const vis = Visibilities.getForActive();
             switch (action) {
                 case "launcher":
@@ -198,38 +267,6 @@ Scope {
                 triggerTimer.stop();
             }
             wasInZone = inTriggerZone;
-        }
-
-        implicitWidth: glowRadius * 2
-        implicitHeight: glowRadius * 2
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: glowRadius * 2
-            height: glowRadius * 2
-            radius: glowRadius
-
-            scale: glow.proximity
-            opacity: glow.proximity * CornerSettings.glowIntensity
-
-            color: Colours.palette.m3primary
-            gradient: Gradient {
-                GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0) }
-                GradientStop { position: 0.5; color: Colours.palette.m3primaryContainer }
-                GradientStop { position: 1; color: Colours.palette.m3primary }
-            }
-
-            Behavior on scale {
-                Anim {
-                    type: Anim.StandardSmall
-                }
-            }
-
-            Behavior on opacity {
-                Anim {
-                    type: Anim.DefaultEffects
-                }
-            }
         }
 
         Timer {
