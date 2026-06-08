@@ -2,119 +2,123 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Hyprland
 import Caelestia.Config
 
 Singleton {
     id: root
 
-    readonly property var occupied: {
+    readonly property bool enabled: Config.bar.workspaces.purgeEmpty
+
+    property var occupied: ({})
+    property int occupiedCount: 0
+    property int maxOccupied: 0
+
+    function refresh(): void {
         const occ = {};
-        for (const ws of Hypr.workspaces.values)
-            occ[ws.id] = ws.lastIpcObject.windows > 0;
-        return occ;
-    }
-
-    readonly property int occupiedCount: {
         let count = 0;
-        for (const ws of Hypr.workspaces.values) {
-            if (ws.lastIpcObject.windows > 0)
-                count++;
-        }
-        return count;
-    }
-
-    readonly property int maxOccupied: {
         let maxId = 0;
         for (const ws of Hypr.workspaces.values) {
-            if (ws.lastIpcObject.windows > 0 && ws.id > maxId)
-                maxId = ws.id;
+            const hasWindows = ws.lastIpcObject.windows > 0 && !ws.name.startsWith("special:");
+            occ[ws.id] = hasWindows;
+            if (hasWindows) {
+                count++;
+                if (ws.id > maxId)
+                    maxId = ws.id;
+            }
         }
-        return maxId;
+        root.occupied = occ;
+        root.occupiedCount = count;
+        root.maxOccupied = maxId;
     }
 
-    readonly property var workspacesList: Hypr.workspaces.values
+    onEnabledChanged: if (enabled) compact()
+
+    function compact(): void {
+        if (!enabled) return;
+        debounceTimer.restart();
+    }
+
+    Timer {
+        id: debounceTimer
+        interval: 100
+        repeat: false
+        onTriggered: performCompaction()
+    }
+
+    function performCompaction(): void {
+        const toplevels = Hypr.toplevels.values.filter(t => t.workspace && t.workspace.id > 0);
+        const occupiedIds = new Set(toplevels.map(t => t.workspace.id));
+        const sortedOccupied = Array.from(occupiedIds).sort((a, b) => a - b);
+
+        let targetId = 1;
+        const activeWsId = Hypr.activeWsId;
+        let activeWsMovedTo = -1;
+
+        for (const currentId of sortedOccupied) {
+            if (currentId > targetId) {
+                const windowsToMove = toplevels.filter(t => t.workspace.id === currentId);
+                for (const w of windowsToMove) {
+                    Hyprland.dispatch(`hl.dsp.window.move({ workspace = ${targetId}, window = "address:0x${w.address}", follow = false })`);
+                }
+                if (activeWsId === currentId)
+                    activeWsMovedTo = targetId;
+            }
+            targetId++;
+        }
+
+        if (activeWsMovedTo !== -1)
+            Hypr.dsp.focus({ workspace: activeWsMovedTo });
+
+        root.refresh();
+    }
 
     function cycleWorkspace(direction: string): void {
-        if (!Config.bar.workspaces.purgeEmpty) {
-            Hypr.dsp.focus({ workspace: `"e${direction === "next" ? "+1" : "-1"}"` });
-            return;
-        }
+        const currentId = Hypr.activeWsId;
+        const limit = Math.max(root.maxOccupied + 1, 1);
 
-        const occ = root.occupied;
-        const activeId = Hypr.activeWsId;
-        const ids = Object.keys(occ)
-            .map(Number)
-            .filter(id => occ[id])
-            .sort((a, b) => a - b);
-
-        if (ids.length === 0) {
-            Hypr.dsp.focus({ workspace: 1 });
-            return;
-        }
-
-        const maxId = ids[ids.length - 1];
         let nextId;
-
         if (direction === "next") {
-            if (activeId < maxId) {
-                nextId = activeId + 1;
-                while (nextId <= maxId && !occ[nextId])
-                    nextId++;
-                if (nextId > maxId)
-                    nextId = ids[0];
-            } else {
-                nextId = ids[0];
-            }
+            nextId = (currentId % limit) + 1;
         } else {
-            if (activeId > ids[0]) {
-                nextId = activeId - 1;
-                while (nextId >= ids[0] && !occ[nextId])
-                    nextId--;
-                if (nextId < ids[0])
-                    nextId = ids[ids.length - 1];
-            } else {
-                nextId = ids[ids.length - 1];
-            }
+            nextId = currentId <= 1 ? limit : currentId - 1;
         }
 
         Hypr.dsp.focus({ workspace: nextId });
     }
 
-    function autoCompact(): void {
-        if (!Config.bar.workspaces.purgeEmpty)
-            return;
+    Component.onCompleted: root.refresh()
 
-        const occ = root.occupied;
-        const ids = Object.keys(occ)
-            .map(Number)
-            .filter(id => occ[id])
-            .sort((a, b) => a - b);
+    Connections {
+        target: Hyprland
 
-        if (ids.length === 0)
-            return;
-
-        let target = 1;
-        for (const id of ids) {
-            if (id !== target && id > 0) {
-                for (const ws of Hypr.workspaces.values) {
-                    if (ws.id === id) {
-                        for (const tl of ws.toplevels.values) {
-                            Hypr.dsp.window.move({ workspace: target, window: `address:${tl.address}` });
-                        }
-                    }
+        function onRawEvent(event): void {
+            const name = event?.name ?? "";
+            if (name === "workspace" || name === "workspacev2"
+                || name === "openwindow" || name === "closewindow"
+                || name === "movewindow" || name === "movewindowv2"
+                || name === "focusedmon" || name === "focusedmonv2"
+                || name === "destroyworkspace" || name === "createworkspace") {
+                root.refresh();
+                if (root.enabled
+                    && (name === "closewindow" || name === "openwindow"
+                        || name === "movewindow" || name === "movewindowv2")) {
+                    root.compact();
                 }
             }
-            target++;
         }
     }
 
-    Connections {
-        function onWorkspacesChanged(): void {
-            if (Config.bar.workspaces.purgeEmpty)
-                root.autoCompact();
+    IpcHandler {
+        function cycle(direction: string): void {
+            root.cycleWorkspace(direction);
         }
 
-        target: Hyprland
+        function compact(): void {
+            root.compact();
+        }
+
+        target: "workspaces"
     }
 }
