@@ -45,6 +45,97 @@ Singleton {
         Hyprland.dispatch(request);
     }
 
+    readonly property QtObject dsp: QtObject {
+        function focus(opts: var): void {
+            const parts = [];
+            if (opts.workspace !== undefined)
+                parts.push(`workspace = ${opts.workspace}`);
+            if (opts.on_current_monitor)
+                parts.push("on_current_monitor = true");
+            if (opts.direction !== undefined)
+                parts.push(`direction = "${opts.direction}"`);
+            if (opts.monitor !== undefined)
+                parts.push(`monitor = "${opts.monitor}"`);
+            Hyprland.dispatch(`hl.dsp.focus({ ${parts.join(", ")} })`);
+        }
+
+        function exec_cmd(cmd: string, rules: var): void {
+            if (rules !== undefined)
+                Hyprland.dispatch(`hl.dsp.exec_cmd({ cmd = "${cmd}", rules = ${JSON.stringify(rules)} })`);
+            else
+                Hyprland.dispatch(`hl.dsp.exec_cmd({ cmd = "${cmd}" })`);
+        }
+
+        readonly property QtObject workspace: QtObject {
+            function toggle_special(name: string): void {
+                Hyprland.dispatch(`hl.dsp.workspace.toggle_special("${name}")`);
+            }
+
+            function move(opts: var): void {
+                const parts = [];
+                if (opts.workspace !== undefined)
+                    parts.push(`workspace = ${opts.workspace}`);
+                if (opts.monitor !== undefined)
+                    parts.push(`monitor = "${opts.monitor}"`);
+                Hyprland.dispatch(`hl.dsp.workspace.move({ ${parts.join(", ")} })`);
+            }
+
+            function rename(opts: var): void {
+                const parts = [];
+                if (opts.workspace !== undefined)
+                    parts.push(`workspace = ${opts.workspace}`);
+                if (opts.name !== undefined)
+                    parts.push(`name = "${opts.name}"`);
+                Hyprland.dispatch(`hl.dsp.workspace.rename({ ${parts.join(", ")} })`);
+            }
+        }
+
+        readonly property QtObject window: QtObject {
+            function move(opts: var): void {
+                const parts = [];
+                if (opts.workspace !== undefined)
+                    parts.push(`workspace = ${opts.workspace}`);
+                if (opts.window !== undefined)
+                    parts.push(`window = "${opts.window}"`);
+                if (opts.silent)
+                    parts.push("silent = true");
+                Hyprland.dispatch(`hl.dsp.window.move({ ${parts.join(", ")} })`);
+            }
+
+            function float(opts: var): void {
+                const parts = [];
+                if (opts.action !== undefined)
+                    parts.push(`action = "${opts.action}"`);
+                if (opts.window !== undefined)
+                    parts.push(`window = "${opts.window}"`);
+                Hyprland.dispatch(`hl.dsp.window.float({ ${parts.join(", ")} })`);
+            }
+
+            function pin(opts: var): void {
+                const parts = [];
+                if (opts.action !== undefined)
+                    parts.push(`action = "${opts.action}"`);
+                if (opts.window !== undefined)
+                    parts.push(`window = "${opts.window}"`);
+                Hyprland.dispatch(`hl.dsp.window.pin({ ${parts.join(", ")} })`);
+            }
+
+            function close(opts: var): void {
+                const parts = [];
+                if (opts.window !== undefined)
+                    parts.push(`window = "${opts.window}"`);
+                Hyprland.dispatch(`hl.dsp.window.close({ ${parts.join(", ")} })`);
+            }
+
+            function kill(opts: var): void {
+                const parts = [];
+                if (opts.window !== undefined)
+                    parts.push(`window = "${opts.window}"`);
+                Hyprland.dispatch(`hl.dsp.window.kill({ ${parts.join(", ")} })`);
+            }
+        }
+    }
+
     function cycleSpecialWorkspace(direction: string): void {
         const openSpecials = workspaces.values.filter(w => w.name.startsWith("special:") && w.lastIpcObject.windows > 0);
 
@@ -57,11 +148,11 @@ Singleton {
             if (lastSpecialWorkspace) {
                 const workspace = workspaces.values.find(w => w.name === lastSpecialWorkspace);
                 if (workspace && workspace.lastIpcObject.windows > 0) {
-                    dispatch(`workspace ${lastSpecialWorkspace}`);
+                    root.dsp.focus({ workspace: `"${lastSpecialWorkspace}"` });
                     return;
                 }
             }
-            dispatch(`workspace ${openSpecials[0].name}`);
+            root.dsp.focus({ workspace: `"${openSpecials[0].name}"` });
             return;
         }
 
@@ -75,7 +166,7 @@ Singleton {
                 nextIndex = (currentIndex - 1 + openSpecials.length) % openSpecials.length;
         }
 
-        dispatch(`workspace ${openSpecials[nextIndex].name}`);
+        root.dsp.focus({ workspace: `"${openSpecials[nextIndex].name}"` });
     }
 
     function monitorNames(): list<string> {

@@ -227,9 +227,9 @@ Item {
 
             const ws = view.itemAt(event.x, event.y) as SpecialWsDelegate;
             if (ws?.modelData)
-                Hypr.dispatch(`togglespecialworkspace ${ws.modelData.name.slice(8)}`);
+                Hypr.dsp.workspace.toggle_special(ws.modelData.name.slice(8));
             else
-                Hypr.dispatch("togglespecialworkspace special");
+                Hypr.dsp.workspace.toggle_special("special");
         }
     }
 
