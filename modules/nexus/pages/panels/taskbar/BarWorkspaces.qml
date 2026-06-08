@@ -76,11 +76,24 @@ PageBase {
 
         ToggleRow {
             Layout.fillWidth: true
-            last: true
             text: qsTr("Per-monitor workspaces")
             subtext: qsTr("Show each monitor's workspaces independently")
             checked: GlobalConfig.bar.workspaces.perMonitorWorkspaces
             onToggled: GlobalConfig.bar.workspaces.perMonitorWorkspaces = checked
+        }
+
+        SectionHeader {
+            text: qsTr("Auto-compact")
+        }
+
+        ToggleRow {
+            Layout.fillWidth: true
+            first: true
+            last: true
+            text: qsTr("Auto-compact workspaces")
+            subtext: qsTr("Eliminate gaps by moving windows to fill empty workspaces")
+            checked: Config.bar.workspaces.purgeEmpty
+            onToggled: GlobalConfig.bar.workspaces.purgeEmpty = checked
         }
     }
 }

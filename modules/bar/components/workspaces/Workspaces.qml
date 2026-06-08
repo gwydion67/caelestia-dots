@@ -17,13 +17,17 @@ StyledClippingRect {
     readonly property bool onSpecial: (GlobalConfig.bar.workspaces.perMonitorWorkspaces ? Hypr.monitorFor(screen) : Hypr.focusedMonitor)?.lastIpcObject.specialWorkspace?.name !== ""
     readonly property int activeWsId: GlobalConfig.bar.workspaces.perMonitorWorkspaces ? (Hypr.monitorFor(screen).activeWorkspace?.id ?? 1) : Hypr.activeWsId
 
-    readonly property var occupied: {
-        const occ = {};
-        for (const ws of Hypr.workspaces.values)
-            occ[ws.id] = ws.lastIpcObject.windows > 0;
-        return occ;
+    readonly property var occupied: WorkspaceManager.occupied
+    readonly property int groupOffset: {
+        if (Config.bar.workspaces.purgeEmpty)
+            return 0;
+        return Math.floor((activeWsId - 1) / Config.bar.workspaces.shown) * Config.bar.workspaces.shown;
     }
-    readonly property int groupOffset: Math.floor((activeWsId - 1) / Config.bar.workspaces.shown) * Config.bar.workspaces.shown
+    readonly property int workspaceCount: {
+        if (Config.bar.workspaces.purgeEmpty)
+            return Math.max(WorkspaceManager.maxOccupied + 1, 1);
+        return Config.bar.workspaces.shown;
+    }
 
     property real blur: onSpecial ? 1 : 0
 
@@ -69,7 +73,7 @@ StyledClippingRect {
             Repeater {
                 id: workspaces
 
-                model: Config.bar.workspaces.shown
+                model: root.workspaceCount
 
                 Workspace {
                     activeWsId: root.activeWsId

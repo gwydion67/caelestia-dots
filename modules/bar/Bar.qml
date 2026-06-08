@@ -84,8 +84,8 @@ ColumnLayout {
             const specialWs = mon?.lastIpcObject.specialWorkspace.name;
             if (specialWs?.length > 0)
                 Hypr.dsp.workspace.toggle_special(specialWs.slice(8));
-            else if (angleDelta.y < 0 || (GlobalConfig.bar.workspaces.perMonitorWorkspaces ? mon.activeWorkspace?.id : Hypr.activeWsId) > 1)
-                Hypr.dsp.focus({ workspace: `"r${angleDelta.y > 0 ? "-" : "+"}1"` });
+            else
+                WorkspaceManager.cycleWorkspace(angleDelta.y > 0 ? "previous" : "next");
         } else if (y < screen.height / 2 && Config.bar.scrollActions.volume) {
             // Volume scroll on top half
             if (angleDelta.y > 0)
