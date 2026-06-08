@@ -162,6 +162,44 @@ Scope {
         property bool triggered
         property bool wasInZone
 
+        function doAction(): void {
+            const vis = Visibilities.getForActive();
+            switch (action) {
+                case "launcher":
+                    vis.launcher = !vis.launcher;
+                    break;
+                case "dashboard":
+                    vis.dashboard = !vis.dashboard;
+                    break;
+                case "session":
+                    vis.session = !vis.session;
+                    break;
+                case "sidebar":
+                    vis.sidebar = !vis.sidebar;
+                    break;
+                case "utilities":
+                    vis.utilities = !vis.utilities;
+                    break;
+                case "osd":
+                    vis.osd = !vis.osd;
+                    break;
+                case "nexus":
+                    WindowFactory.create();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        onInTriggerZoneChanged: {
+            if (inTriggerZone && !wasInZone) {
+                triggerTimer.start();
+            } else if (!inTriggerZone) {
+                triggerTimer.stop();
+            }
+            wasInZone = inTriggerZone;
+        }
+
         implicitWidth: glowRadius * 2
         implicitHeight: glowRadius * 2
 
@@ -205,44 +243,6 @@ Scope {
                     glow.doAction();
                 }
             }
-        }
-
-        function doAction(): void {
-            const vis = Visibilities.getForActive();
-            switch (action) {
-                case "launcher":
-                    vis.launcher = !vis.launcher;
-                    break;
-                case "dashboard":
-                    vis.dashboard = !vis.dashboard;
-                    break;
-                case "session":
-                    vis.session = !vis.session;
-                    break;
-                case "sidebar":
-                    vis.sidebar = !vis.sidebar;
-                    break;
-                case "utilities":
-                    vis.utilities = !vis.utilities;
-                    break;
-                case "osd":
-                    vis.osd = !vis.osd;
-                    break;
-                case "nexus":
-                    WindowFactory.create();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        onInTriggerZoneChanged: {
-            if (inTriggerZone && !wasInZone) {
-                triggerTimer.start();
-            } else if (!inTriggerZone) {
-                triggerTimer.stop();
-            }
-            wasInZone = inTriggerZone;
         }
     }
 }

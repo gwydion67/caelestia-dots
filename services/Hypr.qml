@@ -39,33 +39,7 @@ Singleton {
     property bool hadKeyboard
     property string lastSpecialWorkspace: ""
 
-    signal configReloaded
-
-    function dispatch(request: string): void {
-        Hyprland.dispatch(request);
-    }
-
     readonly property QtObject dsp: QtObject {
-        function focus(opts: var): void {
-            const parts = [];
-            if (opts.workspace !== undefined)
-                parts.push(`workspace = ${opts.workspace}`);
-            if (opts.on_current_monitor)
-                parts.push("on_current_monitor = true");
-            if (opts.direction !== undefined)
-                parts.push(`direction = "${opts.direction}"`);
-            if (opts.monitor !== undefined)
-                parts.push(`monitor = "${opts.monitor}"`);
-            Hyprland.dispatch(`hl.dsp.focus({ ${parts.join(", ")} })`);
-        }
-
-        function exec_cmd(cmd: string, rules: var): void {
-            if (rules !== undefined)
-                Hyprland.dispatch(`hl.dsp.exec_cmd({ cmd = "${cmd}", rules = ${JSON.stringify(rules)} })`);
-            else
-                Hyprland.dispatch(`hl.dsp.exec_cmd({ cmd = "${cmd}" })`);
-        }
-
         readonly property QtObject workspace: QtObject {
             function toggle_special(name: string): void {
                 Hyprland.dispatch(`hl.dsp.workspace.toggle_special("${name}")`);
@@ -134,6 +108,32 @@ Singleton {
                 Hyprland.dispatch(`hl.dsp.window.kill({ ${parts.join(", ")} })`);
             }
         }
+
+        function focus(opts: var): void {
+            const parts = [];
+            if (opts.workspace !== undefined)
+                parts.push(`workspace = ${opts.workspace}`);
+            if (opts.on_current_monitor)
+                parts.push("on_current_monitor = true");
+            if (opts.direction !== undefined)
+                parts.push(`direction = "${opts.direction}"`);
+            if (opts.monitor !== undefined)
+                parts.push(`monitor = "${opts.monitor}"`);
+            Hyprland.dispatch(`hl.dsp.focus({ ${parts.join(", ")} })`);
+        }
+
+        function exec_cmd(cmd: string, rules: var): void {
+            if (rules !== undefined)
+                Hyprland.dispatch(`hl.dsp.exec_cmd({ cmd = "${cmd}", rules = ${JSON.stringify(rules)} })`);
+            else
+                Hyprland.dispatch(`hl.dsp.exec_cmd({ cmd = "${cmd}" })`);
+        }
+    }
+
+    signal configReloaded
+
+    function dispatch(request: string): void {
+        Hyprland.dispatch(request);
     }
 
     function cycleSpecialWorkspace(direction: string): void {
