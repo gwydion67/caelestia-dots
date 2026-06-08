@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import Caelestia.Config
@@ -11,17 +13,12 @@ ConnectedRect {
 
     property alias label: label.text
     property string subtext
-    property alias menuItems: splitButton.menuItems
-    property alias active: splitButton.active
-    property alias fallbackText: splitButton.fallbackText
-    property alias fallbackIcon: splitButton.fallbackIcon
-    property alias menuOnTop: splitButton.menuOnTop
+    property var model: []
+    property int currentIndex: 0
 
-    signal selected(item: MenuItem)
+    signal activated(index: int)
 
     implicitHeight: rowLayout.implicitHeight + rowLayout.anchors.margins * 2
-    clip: false
-    z: splitButton.expanded ? 1 : 0
 
     RowLayout {
         id: rowLayout
@@ -54,12 +51,29 @@ ConnectedRect {
             }
         }
 
-        SplitButton {
-            id: splitButton
+        StyledRect {
+            implicitWidth: valueLabel.implicitWidth + Tokens.padding.large
+            implicitHeight: valueLabel.implicitHeight + Tokens.padding.small
 
-            type: SplitButton.Tonal
-            stateLayer.onClicked: splitButton.expanded = !splitButton.expanded
-            menu.onItemSelected: item => root.selected(item)
+            radius: Tokens.rounding.full
+            color: Colours.tPalette.m3surfaceContainerHighest
+
+            StyledText {
+                id: valueLabel
+
+                anchors.centerIn: parent
+                text: root.currentIndex >= 0 && root.currentIndex < root.model.length ? root.model[root.currentIndex] : ""
+                color: Colours.palette.m3primary
+                font: Tokens.font.body.small
+            }
+
+            StateLayer {
+                color: Colours.palette.m3onSurface
+                onClicked: {
+                    const next = (root.currentIndex + 1) % root.model.length;
+                    root.activated(next);
+                }
+            }
         }
     }
 }

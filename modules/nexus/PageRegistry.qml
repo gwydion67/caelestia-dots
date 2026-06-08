@@ -64,6 +64,12 @@ QtObject {
             category: "shell"
         },
         {
+            label: qsTr("Hot Corners"),
+            icon: "touch_app",
+            description: qsTr("Corner actions, proximity glow"),
+            category: "shell"
+        },
+        {
             label: qsTr("Services"),
             icon: "build",
             description: qsTr("Poll intervals, lyrics backend"),

@@ -12,6 +12,7 @@ import qs.modules.nexus.pages.bluetooth
 import qs.modules.nexus.pages.panels
 import qs.modules.nexus.pages.wallandstyle
 import qs.modules.nexus.pages.panels.taskbar
+import qs.modules.nexus.pages.corners
 
 QtObject {
     id: root
@@ -114,6 +115,14 @@ QtObject {
                 }
                 Component {
                     BarClock {}
+                }
+            }
+        },
+        Component {
+            // Hot Corners
+            StackPage {
+                Component {
+                    CornersPane {}
                 }
             }
         },
