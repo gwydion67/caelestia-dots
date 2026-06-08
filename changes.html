@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caelestia Changelog & Design Spec</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #e0e0e0;
+            background-color: #121212;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #bb86fc;
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #03dac6;
+            margin-top: 30px;
+            border-left: 4px solid #03dac6;
+            padding-left: 10px;
+        }
+        h3 {
+            color: #cf6679;
+        }
+        .change-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #252525;
+            border-radius: 5px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+        .feat { background-color: #4caf50; color: white; }
+        .fix { background-color: #f44336; color: white; }
+        .refactor { background-color: #2196f3; color: white; }
+        code {
+            background-color: #2d2d2d;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #f8f8f2;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .spec-table th, .spec-table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .spec-table th {
+            background-color: #2a2a2a;
+            color: #03dac6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Caelestia: Changelog & Design Specification</h1>
+
+        <h2>1. Network Speed in Taskbar</h2>
+        <div class="change-item">
+            <span class="tag feat">Feature</span>
+            <p>Added real-time network speed monitoring to the status bar with detailed history visualization.</p>
+            <h3>Technical Implementation</h3>
+            <ul>
+                <li><strong>Service:</strong> Integrated with <code>NetworkUsage</code> service for data collection.</li>
+                <li><strong>Component:</strong> Added <code>netSpeed</code> loader in <code>StatusIcons.qml</code>.</li>
+                <li><strong>UI:</strong> Compact mono-font display in the bar; detailed popout in <code>NetworkSpeed.qml</code>.</li>
+                <li><strong>Visualization:</strong> Includes a dual-line sparkline graph for upload and download history.</li>
+            </ul>
+            <table class="spec-table">
+                <tr><th>Component</th><th>Path</th></tr>
+                <tr><td>Monitor Icon</td><td><code>modules/bar/components/StatusIcons.qml</code></td></tr>
+                <tr><td>Popout Content</td><td><code>modules/bar/popouts/NetworkSpeed.qml</code></td></tr>
+                <tr><td>Registry</td><td><code>modules/bar/popouts/Content.qml</code></td></tr>
+            </table>
+        </div>
+
+        <h2>2. Corner Action Support (Hot Corners)</h2>
+        <div class="change-item">
+            <span class="tag feat">Feature</span>
+            <span class="tag fix">Fixes</span>
+            <p>Implemented hot corners with proximity-based visual feedback and extensive configuration.</p>
+            <h3>Technical Implementation</h3>
+            <ul>
+                <li><strong>Tracking:</strong> Uses <code>hyprctl cursorpos -j</code> via a <code>Process</code> for reliable global mouse tracking.</li>
+                <li><strong>Feedback:</strong> Proximity-based glow effect that scales and fades as the cursor nears a corner.</li>
+                <li><strong>Trigger:</strong> 10x10px trigger area with configurable activation delay.</li>
+                <li><strong>Persistence:</strong> Settings saved via <code>CornerSettings</code> service.</li>
+            </ul>
+            <table class="spec-table">
+                <tr><th>Component</th><th>Path</th></tr>
+                <tr><td>Logic & UI</td><td><code>modules/CornerActions.qml</code></td></tr>
+                <tr><td>Settings Service</td><td><code>services/CornerSettings.qml</code></td></tr>
+                <tr><td>Configuration UI</td><td><code>modules/controlcenter/corners/CornersPane.qml</code></td></tr>
+            </table>
+        </div>
+
+        <h2>3. Hyprland 0.55 Compatibility</h2>
+        <div class="change-item">
+            <span class="tag fix">Fix</span>
+            <p>Updated Hyprland IPC communication to support version 0.55 dispatch command format.</p>
+            <h3>Changes</h3>
+            <ul>
+                <li>Updated <code>Hypr.dispatch</code> calls to use the new structured string format.</li>
+                <li>Replaced legacy commands with modern counterparts:
+                    <ul>
+                        <li><code>workspace</code> &rarr; <code>hl.dsp.focus({ workspace = ... })</code></li>
+                        <li><code>movetoworkspace</code> &rarr; <code>hl.dsp.window.move({ ... })</code></li>
+                        <li><code>togglespecialworkspace</code> &rarr; <code>hl.dsp.workspace.toggle_special(...)</code></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <h2>4. Workspace Manager & Auto-Compact</h2>
+        <div class="change-item">
+            <span class="tag feat">Feature</span>
+            <span class="tag refactor">Refactor</span>
+            <p>Centralized workspace management logic and added an "Auto-Compact" feature to eliminate gaps between workspaces.</p>
+            <h3>Technical Implementation</h3>
+            <ul>
+                <li><strong>WorkspaceManager:</strong> A new singleton for handling complex workspace operations.</li>
+                <li><strong>Auto-Compact:</strong> Dynamically moves windows to fill empty workspaces, maintaining a contiguous sequence.</li>
+                <li><strong>Smarter Cycling:</strong> <code>cycleWorkspace</code> now wraps around based on the actual number of occupied workspaces + 1.</li>
+                <li><strong>Dynamic Bar:</strong> The workspace indicator in the bar now adjusts its count based on <code>purgeEmpty</code> settings.</li>
+            </ul>
+            <table class="spec-table">
+                <tr><th>Component</th><th>Path</th></tr>
+                <tr><td>Core Service</td><td><code>services/WorkspaceManager.qml</code></td></tr>
+                <tr><td>Settings</td><td><code>services/WorkspaceSettings.qml</code></td></tr>
+                <tr><td>Bar Integration</td><td><code>modules/bar/components/workspaces/Workspaces.qml</code></td></tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
