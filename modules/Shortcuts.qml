@@ -17,7 +17,7 @@ Scope {
         // qmllint enable unresolved-type
         name: "nexus"
         description: "Open nexus"
-        onPressed: WindowFactory.create()
+        onPressed: WindowFactory.toggle()
     }
 
     // qmllint disable unresolved-type
@@ -131,6 +131,10 @@ Scope {
     IpcHandler {
         function open(): void {
             WindowFactory.create();
+        }
+
+        function toggle(): void {
+            WindowFactory.toggle();
         }
 
         target: "nexus"

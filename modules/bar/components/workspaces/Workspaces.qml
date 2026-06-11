@@ -25,7 +25,7 @@ StyledClippingRect {
     }
     readonly property int workspaceCount: {
         if (Config.bar.workspaces.purgeEmpty)
-            return Math.max(WorkspaceManager.maxOccupied + 1, 1);
+            return Math.max(WorkspaceManager.maxOccupied + 1, 2);
         return Config.bar.workspaces.shown;
     }
 

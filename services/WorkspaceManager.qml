@@ -52,12 +52,12 @@ Singleton {
         const occupiedIds = new Set(toplevels.map(t => t.workspace.id));
         const sortedOccupied = Array.from(occupiedIds).sort((a, b) => a - b);
 
-        let targetId = 1;
+        let targetId = 2;
         const activeWsId = Hypr.activeWsId;
         let activeWsMovedTo = -1;
 
         for (const currentId of sortedOccupied) {
-            if (currentId > targetId) {
+            if (currentId !== targetId) {
                 const windowsToMove = toplevels.filter(t => t.workspace.id === currentId);
                 for (const w of windowsToMove) {
                     Hyprland.dispatch(`hl.dsp.window.move({ workspace = ${targetId}, window = "address:0x${w.address}", follow = false })`);
@@ -76,7 +76,7 @@ Singleton {
 
     function cycleWorkspace(direction: string): void {
         const currentId = Hypr.activeWsId;
-        const limit = Math.max(root.maxOccupied + 1, 1);
+        const limit = Math.max(root.maxOccupied + 1, 2);
 
         let nextId;
         if (direction === "next") {

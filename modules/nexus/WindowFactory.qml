@@ -10,8 +10,21 @@ import qs.modules.nexus
 Singleton {
     id: root
 
+    property FloatingWindow activeWindow: null
+
+    function toggle(parent: Item, props: var): void {
+        if (activeWindow) {
+            activeWindow.destroy();
+        } else {
+            create(parent, props);
+        }
+    }
+
     function create(parent: Item, props: var): void {
-        nexusComp.createObject(parent ?? dummy, props);
+        if (activeWindow) {
+            activeWindow.destroy();
+        }
+        activeWindow = nexusComp.createObject(parent ?? dummy, props);
     }
 
     QtObject {
@@ -23,6 +36,12 @@ Singleton {
 
         FloatingWindow {
             id: win
+
+            Component.onDestruction: {
+                if (root.activeWindow === win) {
+                    root.activeWindow = null;
+                }
+            }
 
             color: Colours.tPalette.m3surface
             surfaceFormat.opaque: false
